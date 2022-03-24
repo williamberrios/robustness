@@ -1,7 +1,7 @@
 import torch as ch
 import numpy as np
 import torch.nn as nn
-from torch.optim import SGD, lr_scheduler
+from torch.optim import SGD,Adam, lr_scheduler
 from torchvision.utils import make_grid
 from cox.utils import Parameters
 
@@ -79,6 +79,18 @@ def make_optimizer_and_schedule(args, model, checkpoint, params):
     """
     # Make optimizer
     param_list = model.parameters() if params is None else params
+    
+    # Adding optimizer 
+    if args.optimizer == 'sgd': 
+        print("Using SGD optimizer")
+        optimizer = SGD(param_list, args.lr, momentum=args.momentum,
+                                    weight_decay=args.weight_decay)
+    
+    elif args.optimizer == 'adam':
+        print("Using ADAM optimizer")
+        optimizer = Adam(param_list, args.lr, weight_decay=args.weight_decay)
+    
+    
     optimizer = SGD(param_list, args.lr, momentum=args.momentum,
                                 weight_decay=args.weight_decay)
 
@@ -92,6 +104,9 @@ def make_optimizer_and_schedule(args, model, checkpoint, params):
         eps = args.epochs
         lr_func = lambda t: np.interp([t], [0, eps*4//15, eps], [0, 1, 0])[0]
         schedule = lr_scheduler.LambdaLR(optimizer, lr_func)
+    elif args.custom_lr_multiplier == 'transformer':
+        # Generate new scheduler:
+        schedule = None
     elif args.custom_lr_multiplier:
         cs = args.custom_lr_multiplier
         periods = eval(cs) if type(cs) is str else cs
@@ -103,7 +118,9 @@ def make_optimizer_and_schedule(args, model, checkpoint, params):
                     if ep >= milestone: return lr
                 return 1.0
         schedule = lr_scheduler.LambdaLR(optimizer, lr_func)
+        
     elif args.step_lr:
+        
         schedule = lr_scheduler.StepLR(optimizer, step_size=args.step_lr, gamma=args.step_lr_gamma)
 
     # Fast-forward the optimizer and the scheduler if resuming
@@ -371,7 +388,9 @@ def train_model(args, model, loaders, *, checkpoint=None, dp_device_ids=None,
             save_checkpoint(consts.CKPT_NAME_LATEST)
             if is_best: save_checkpoint(consts.CKPT_NAME_BEST)
 
-        if schedule: schedule.step()
+        if schedule: 
+            schedule.step()
+            
         if has_attr(args, 'epoch_hook'): args.epoch_hook(model, log_info)
 
     return model
@@ -476,7 +495,13 @@ def _model_loop(args, loop_type, loader, model, opt, epoch, adv, writer):
         if has_attr(args, "regularizer"):
             reg_term =  args.regularizer(model, inp, target)
         loss = loss + reg_term
-
+        
+        # Custom scheduler:
+        if args.custom_lr_multiplier == "transformer":
+            lr = custom_lr_scheduler_v1(epoch,i,len(loader))
+            for param_group in opt.param_groups:
+                param_group['lr'] = lr
+                
         # compute gradient and do SGD step
         if is_train:
             opt.zero_grad()
@@ -496,8 +521,8 @@ def _model_loop(args, loop_type, loader, model, opt, epoch, adv, writer):
         # ITERATOR
         desc = ('{2} Epoch:{0} | Loss {loss.avg:.4f} | '
                 '{1}1 {top1_acc:.3f} | {1}5 {top5_acc:.3f} | '
-                'Reg term: {reg} ||'.format( epoch, prec, loop_msg, 
-                loss=losses, top1_acc=top1_acc, top5_acc=top5_acc, reg=reg_term))
+                'Reg term: {reg} | Lr: {learning_rate}||'.format( epoch, prec, loop_msg, 
+                loss=losses, top1_acc=top1_acc, top5_acc=top5_acc, reg=reg_term,learning_rate = param_group['lr']))
 
         # USER-DEFINED HOOK
         if has_attr(args, 'iteration_hook'):
