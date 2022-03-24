@@ -254,6 +254,11 @@ Maintainers
 - `Dimitris Tsipras <https://twitter.com/tsiprasd>`_
 - `Hadi Salman <https://twitter.com/hadisalmanX>`_
 
+Apex Installation
+-----------------
+. Install cudatoolkit-dev: https://anaconda.org/conda-forge/cudatoolkit-dev
+. Install apex: https://github.com/NVIDIA/apex
+
 Contributors/Commiters
 '''''''''''''''''''''''
 - See `here <https://github.com/MadryLab/robustness/pulse>`_ 
