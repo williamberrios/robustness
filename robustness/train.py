@@ -91,9 +91,6 @@ def make_optimizer_and_schedule(args, model, checkpoint, params):
         optimizer = Adam(param_list, args.lr, weight_decay=args.weight_decay)
     
     
-    optimizer = SGD(param_list, args.lr, momentum=args.momentum,
-                                weight_decay=args.weight_decay)
-
     if args.mixed_precision:
         model.to('cuda')
         model, optimizer = amp.initialize(model, optimizer, 'O1')
