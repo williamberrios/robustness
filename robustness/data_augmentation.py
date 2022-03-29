@@ -88,3 +88,13 @@ Generic test data transform (no augmentation) to complement
 :meth:`robustness.data_augmentation.TEST_TRANSFORMS_DEFAULT`, takes in an image
 side length.
 """
+
+TRAIN_TRANSFORMS_FAT_ROTINV = transforms.Compose([
+        transforms.RandomResizedCrop(224),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomApply([transforms.RandomRotation((90, 90))], p=0.5),
+        transforms.RandomApply([transforms.RandomRotation((180, 180))], p=0.5),
+        transforms.ToTensor()])
+"""
+Special augmentation for rotation invariance + adv training 
+"""
