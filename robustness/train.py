@@ -23,6 +23,42 @@ try:
 except Exception as e:
     warnings.warn('Could not import amp.')
 
+# +
+class Linear_LR:
+    def __init__(self,lr_init,lr_final,nsteps):
+        self.lr_init  = lr_init
+        self.lr_final = lr_final
+        self.nsteps   = nsteps
+        self.delta    = (lr_final - lr_init)/(nsteps)
+    def __call__(self,i):
+        return self.lr_init + self.delta*i
+
+def custom_lr_scheduler_v1(epoch,i,nsteps): 
+    if epoch < 1:
+        lr_scheduler = Linear_LR(8e-5,2e-4,nsteps)
+        return lr_scheduler(i)
+    elif epoch < 2:
+        lr_scheduler = Linear_LR(2e-4,1e-4,nsteps)
+        return lr_scheduler(i)
+    elif epoch < 3:
+        lr_scheduler = Linear_LR(1e-4,5e-5,nsteps)
+        return lr_scheduler(i)
+    elif epoch < 4:
+        lr_scheduler = Linear_LR(5e-5,2.5e-5,nsteps)
+        return lr_scheduler(i)
+    elif epoch < 5:
+        lr_scheduler = Linear_LR(2.5e-5,1.25e-5,nsteps)
+        return lr_scheduler(i)
+    elif epoch < 6:
+        lr_scheduler = Linear_LR(1.25e-5,6.25e-6,nsteps)
+        return lr_scheduler(i)
+    elif epoch < 7:
+        lr_scheduler = Linear_LR(6.25e-6,3.125e-06,nsteps)
+        return lr_scheduler(i)
+
+
+# -
+
 def check_required_args(args, eval_only=False):
     """
     Check that the required training arguments are present.
@@ -462,7 +498,7 @@ def _model_loop(args, loop_type, loader, model, opt, epoch, adv, writer):
             'random_restarts': random_restarts,
             'use_best': bool(args.use_best)
         }
-
+    print(f"Len Loader:{len(loader)}")
     iterator = tqdm(enumerate(loader), total=len(loader))
     for i, (inp, target) in iterator:
        # measure data loading time
@@ -525,8 +561,8 @@ def _model_loop(args, loop_type, loader, model, opt, epoch, adv, writer):
         # ITERATOR
         desc = ('{2} Epoch:{0} | Loss {loss.avg:.4f} | '
                 '{1}1 {top1_acc:.3f} | {1}5 {top5_acc:.3f} | '
-                'Reg term: {reg} | Lr: {learning_rate}||'.format( epoch, prec, loop_msg, 
-                loss=losses, top1_acc=top1_acc, top5_acc=top5_acc, reg=reg_term,learning_rate = param_group['lr']))
+                'Reg term: {reg} | Lr: {learning_rate:.2f}e-4'.format( epoch, prec, loop_msg, 
+                loss=losses, top1_acc=top1_acc, top5_acc=top5_acc, reg=reg_term,learning_rate = param_group['lr']*1e4))
 
         # USER-DEFINED HOOK
         if has_attr(args, 'iteration_hook'):
@@ -544,4 +580,3 @@ def _model_loop(args, loop_type, loader, model, opt, epoch, adv, writer):
                               epoch)
 
     return top1.avg, losses.avg
-
