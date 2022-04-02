@@ -501,6 +501,8 @@ def _model_loop(args, loop_type, loader, model, opt, epoch, adv, writer):
     print(f"Len Loader:{len(loader)}")
     iterator = tqdm(enumerate(loader), total=len(loader))
     for i, (inp, target) in iterator:
+       #if i == 4:
+       #    break
        # measure data loading time
         target = target.cuda(non_blocking=True)
         output, final_inp = model(inp, target=target, make_adv=adv,
@@ -536,11 +538,12 @@ def _model_loop(args, loop_type, loader, model, opt, epoch, adv, writer):
             reg_term =  args.regularizer(model, inp, target)
         loss = loss + reg_term
         
-        # Custom scheduler:
-        if args.custom_lr_multiplier == "transformer":
-            lr = custom_lr_scheduler_v1(epoch,i,len(loader))
-            for param_group in opt.param_groups:
-                param_group['lr'] = lr
+        # Custom scheduler only for tranining:
+        if is_train:
+            if args.custom_lr_multiplier == "transformer":
+                lr = custom_lr_scheduler_v1(epoch,i,len(loader))
+                for param_group in opt.param_groups:
+                    param_group['lr'] = lr
                 
         # compute gradient and do SGD step
         if is_train:
@@ -559,10 +562,16 @@ def _model_loop(args, loop_type, loader, model, opt, epoch, adv, writer):
             writer.add_image('Adv input', adv_grid, epoch)
 
         # ITERATOR
-        desc = ('{2} Epoch:{0} | Loss {loss.avg:.4f} | '
-                '{1}1 {top1_acc:.3f} | {1}5 {top5_acc:.3f} | '
-                'Reg term: {reg} | Lr: {learning_rate:.2f}e-4'.format( epoch, prec, loop_msg, 
-                loss=losses, top1_acc=top1_acc, top5_acc=top5_acc, reg=reg_term,learning_rate = param_group['lr']*1e4))
+        if is_train:
+            desc = ('{2} Epoch:{0} | Loss {loss.avg:.4f} | '
+                    '{1}1 {top1_acc:.3f} | {1}5 {top5_acc:.3f} | '
+                    'Reg term: {reg} | Lr: {learning_rate:.2f}e-4'.format( epoch, prec, loop_msg, 
+                    loss=losses, top1_acc=top1_acc, top5_acc=top5_acc, reg=reg_term,learning_rate = param_group['lr']*1e4))
+        else:
+            desc = ('{2} Epoch:{0} | Loss {loss.avg:.4f} | '
+                    '{1}1 {top1_acc:.3f} | {1}5 {top5_acc:.3f} | '
+                    'Reg term: {reg}'.format( epoch, prec, loop_msg, 
+                    loss=losses, top1_acc=top1_acc, top5_acc=top5_acc, reg=reg_term))
 
         # USER-DEFINED HOOK
         if has_attr(args, 'iteration_hook'):
