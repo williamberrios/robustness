@@ -73,7 +73,7 @@ class Attacker(ch.nn.Module):
                 random_start=False, random_restarts=False, do_tqdm=False,
                 targeted=False, custom_loss=None, should_normalize=True,
                 orig_input=None, use_best=True, return_image=True,
-                est_grad=None, mixed_precision=False):
+                est_grad=None, mixed_precision=False,device = None):
         """
         Implementation of forward (finds adversarial examples). Note that
         this does **not** perform inference and should not be called
@@ -135,8 +135,14 @@ class Attacker(ch.nn.Module):
         """
         # Can provide a different input to make the feasible set around
         # instead of the initial point
+        print("There was a change")
         if orig_input is None: orig_input = x.detach()
-        orig_input = orig_input.cuda()
+        if device is not None:
+            print(device)
+            orig_input = orig_input.cuda()
+        else:
+            print(device)
+            orig_input = orig_input.to(device)
 
         # Multiplier for gradient ascent [untargeted] or descent [targeted]
         m = -1 if targeted else 1

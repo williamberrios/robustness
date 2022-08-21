@@ -365,6 +365,7 @@ def train_model(args, model, loaders, *, checkpoint=None, dp_device_ids=None,
         # evaluate on validation set
         sd_info = {
             'model':model.state_dict(),
+            'weights_arch':model.module.model.model.state_dict(),
             'optimizer':opt.state_dict(),
             'schedule':(schedule and schedule.state_dict()),
             'epoch': epoch+1,
@@ -501,8 +502,8 @@ def _model_loop(args, loop_type, loader, model, opt, epoch, adv, writer):
     print(f"Len Loader:{len(loader)}")
     iterator = tqdm(enumerate(loader), total=len(loader))
     for i, (inp, target) in iterator:
-       #if i == 4:
-       #    break
+        #if i == 4:
+        #    break
        # measure data loading time
         target = target.cuda(non_blocking=True)
         output, final_inp = model(inp, target=target, make_adv=adv,
