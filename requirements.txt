@@ -1,5 +1,5 @@
-torch
-torchvision
+# torch
+# torchvision
 pandas
 numpy 
 scipy
