@@ -256,8 +256,8 @@ Maintainers
 
 Apex Installation
 -----------------
-. Install cudatoolkit-dev: https://anaconda.org/conda-forge/cudatoolkit-dev
-. Install apex: https://github.com/NVIDIA/apex
+- Install cudatoolkit-dev: https://anaconda.org/conda-forge/cudatoolkit-dev
+- Install apex: https://github.com/NVIDIA/apex
 
 Contributors/Commiters
 '''''''''''''''''''''''
